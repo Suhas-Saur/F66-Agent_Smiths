@@ -7,6 +7,7 @@ import {
   Sparkles,
   Info,
   Wrench,
+  Radio,
 } from 'lucide-react';
 import { CaseRunData, LiveCustomerQuery } from '../types';
 import { LiveCustomerQueriesFeed } from './LiveCustomerQueriesFeed';
@@ -55,6 +56,90 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* 🔴 PRIORITY RED NOTIFICATION: INBOUND TECHNICIAN QUERIES */}
+      {liveQueries.filter((q) => q.status === 'pending_approval').length > 0 && (
+        <div className="bg-gradient-to-r from-red-950/90 via-slate-900/95 to-red-950/90 border-2 border-red-500 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-red-500/30 space-y-4 animate-in fade-in zoom-in-98 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-red-500/40 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-600/30 border border-red-500/70 flex items-center justify-center text-red-400 shadow-lg shadow-red-500/30 animate-pulse">
+                <Radio className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
+                    🚨 LIVE INBOUND TECHNICIAN QUERY ALERT
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-red-500/30 text-red-300 border border-red-500 animate-pulse shadow-sm shadow-red-500/40">
+                    {liveQueries.filter((q) => q.status === 'pending_approval').length} ACTION REQUIRED
+                  </span>
+                </div>
+                <p className="text-xs text-red-200/90 mt-0.5">
+                  Technicians submitted live workshop parts requests from Customer Desk requiring immediate review & dispatch confirmation.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 relative z-10">
+            {liveQueries
+              .filter((q) => q.status === 'pending_approval')
+              .map((q) => (
+                <div
+                  key={q.id}
+                  className="bg-slate-950/90 border border-red-500/40 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-xl hover:border-red-400 transition"
+                >
+                  <div className="space-y-1.5 max-w-xl">
+                    <div className="flex items-center space-x-2">
+                      <span className="w-7 h-7 rounded-lg bg-red-500/20 text-red-300 font-mono font-bold text-xs flex items-center justify-center border border-red-500/40">
+                        {q.avatar}
+                      </span>
+                      <span className="text-xs font-bold text-white">{q.customerName}</span>
+                      <span className="text-[10px] text-slate-400">({q.customerTitle})</span>
+                      <span className="text-[10px] font-mono text-red-400 font-bold">• LIVE JUST NOW</span>
+                    </div>
+                    <p className="text-xs text-white font-mono bg-red-950/40 p-2.5 rounded-xl border border-red-500/30">
+                      "{q.text}"
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                      <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                        V: {q.extracted.voltage != null ? `${q.extracted.voltage}V` : 'N/A'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                        C: {q.extracted.connector || 'N/A'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        W: {q.extracted.watts != null ? `${q.extracted.watts}W` : 'Safe 20W'}
+                      </span>
+                      <span className="text-slate-300">
+                        • Recommendation:{' '}
+                        <strong className="text-emerald-400 uppercase font-black">{q.decision}</strong>{' '}
+                        {q.assigned_part_id ? `(${q.assigned_part_id})` : ''}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <button
+                      onClick={() => onAction && onAction(q.id, 'dispatch', 'Approved & dispatched by Admin Desk')}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center space-x-1.5 transition active:scale-95 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Confirm Dispatch</span>
+                    </button>
+                    <button
+                      onClick={() => onAction && onAction(q.id, 'escalate', 'Escalated to human supervisor')}
+                      className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-amber-500/40 text-amber-300 font-semibold text-xs transition active:scale-95 cursor-pointer"
+                    >
+                      <span>Escalate</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Real-Time Live Customer Inbound Stream for Admin Dispatcher */}
       {onAction && onSimulateInbound && (
         <LiveCustomerQueriesFeed

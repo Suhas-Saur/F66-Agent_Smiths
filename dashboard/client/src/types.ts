@@ -15,6 +15,7 @@ export interface LiveCustomerQuery {
   assigned_part_id?: string | null;
   decision_reason?: string | null;
   status: 'pending_approval' | 'approved' | 'dispatched' | 'escalated';
+  isNewAlert?: boolean;
   adminNotes?: string | null;
 }
 

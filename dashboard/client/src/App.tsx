@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { ScoreCards } from './components/ScoreCards';
 import { HomePortal } from './components/HomePortal';
@@ -31,6 +32,15 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserProfile>(PRESET_USERS.admin);
   const [liveQueries, setLiveQueries] = useState<LiveCustomerQuery[]>([]);
+  const [liveToastQuery, setLiveToastQuery] = useState<LiveCustomerQuery | null>(null);
+
+  const pendingAlertCount = liveQueries.filter((q) => q.status === 'pending_approval').length;
+
+  const handleNewInboundQuery = (query: LiveCustomerQuery) => {
+    setLiveQueries((prev) => [query, ...prev.filter((q) => q.id !== query.id)]);
+    setLiveToastQuery(query);
+    setTimeout(() => setLiveToastQuery(null), 10000);
+  };
 
   // Fetch available cases list on mount
   useEffect(() => {
@@ -254,7 +264,61 @@ export default function App() {
         onReplayIntro={() => setShowFlashIntro(true)}
         caseId={runData?.case_id}
         condition={runData?.condition}
+        pendingAlertCount={pendingAlertCount}
       />
+
+      {/* 🔴 LIVE RED NOTIFICATION BANNER / TOAST (TRIGGERED WHEN LIVE QUERY SENT) */}
+      {liveToastQuery && (
+        <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md w-full animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-2 border-red-500 rounded-2xl p-4 shadow-2xl shadow-red-500/50 text-white space-y-3 backdrop-blur-2xl">
+            <div className="flex items-center justify-between border-b border-red-500/40 pb-2">
+              <div className="flex items-center space-x-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <span className="text-xs font-black tracking-wide text-red-300 uppercase font-mono">
+                  🚨 Live Query Sent • Admin Alert
+                </span>
+              </div>
+              <button
+                onClick={() => setLiveToastQuery(null)}
+                className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded-lg hover:bg-white/10 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-white">
+                {liveToastQuery.customerName}{' '}
+                <span className="text-[10px] text-slate-400 font-normal">({liveToastQuery.customerTitle})</span>
+              </p>
+              <p className="text-xs text-red-200 font-mono italic mt-1 bg-black/50 p-2.5 rounded-xl border border-red-500/30">
+                "{liveToastQuery.text}"
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] text-slate-300 font-mono">
+                Recommendation:{' '}
+                <strong className="text-emerald-400 uppercase font-bold">{liveToastQuery.decision}</strong>{' '}
+                {liveToastQuery.assigned_part_id ? `(${liveToastQuery.assigned_part_id})` : ''}
+              </span>
+              <button
+                onClick={() => {
+                  setActiveTab('workbench');
+                  setLiveToastQuery(null);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/40 flex items-center space-x-1 cursor-pointer transition active:scale-95"
+              >
+                <span>Open Admin Desk</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 relative z-10">
@@ -280,6 +344,7 @@ export default function App() {
             liveQueries={liveQueries}
             onAction={handleQueryAction}
             onSimulateInbound={handleSimulateInbound}
+            onQuerySubmitted={handleNewInboundQuery}
           />
         )}
         {activeTab === 'workbench' && (

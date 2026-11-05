@@ -21,6 +21,7 @@ interface CustomerPortalViewProps {
   liveQueries: LiveCustomerQuery[];
   onAction: (id: string, action: 'approve' | 'dispatch' | 'escalate', adminNotes?: string) => Promise<void>;
   onSimulateInbound: () => void;
+  onQuerySubmitted?: (query: LiveCustomerQuery) => void;
 }
 
 export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
@@ -31,6 +32,7 @@ export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
   liveQueries,
   onAction,
   onSimulateInbound,
+  onQuerySubmitted,
 }) => {
   const [newRequestText, setNewRequestText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +64,9 @@ export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
       if (data.query) {
         setSubmissionFeedback(data.query);
         setNewRequestText('');
+        if (onQuerySubmitted) {
+          onQuerySubmitted(data.query);
+        }
       }
     } catch (err) {
       console.error('Request submission failed:', err);

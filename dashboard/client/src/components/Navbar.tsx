@@ -37,6 +37,7 @@ interface NavbarProps {
   onReplayIntro: () => void;
   caseId?: string;
   condition?: string;
+  pendingAlertCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -56,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onReplayIntro,
   caseId,
   condition,
+  pendingAlertCount = 0,
 }) => {
   const currentCases = casesList[selectedDataset] || [];
   const maxIdx = currentCases.length > 0 ? currentCases.length - 1 : 0;
@@ -216,6 +218,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
+          {/* Live Red Alert Notification Pill on Admin Desk */}
+          {pendingAlertCount > 0 && (
+            <button
+              onClick={() => setActiveTab('workbench')}
+              className="flex items-center space-x-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black px-3 py-1.5 rounded-xl text-xs transition shadow-lg shadow-red-600/40 border border-red-400/50 animate-pulse cursor-pointer active:scale-95"
+              title="Click to view inbound queries on Admin Workbench"
+            >
+              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+              <span>🚨 {pendingAlertCount} LIVE ALERT</span>
+            </button>
+          )}
+
           {/* Run Case Button */}
           <button
             onClick={onRunSimulation}
@@ -264,7 +278,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
-              {tab.badge && (
+              {tab.id === 'workbench' && pendingAlertCount > 0 ? (
+                <span className="text-[8px] px-2 py-0.5 rounded-full font-mono font-black uppercase tracking-wider bg-red-600/30 text-red-300 border border-red-500/70 shadow-md shadow-red-500/40 animate-pulse flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                  <span>{pendingAlertCount} ALERT</span>
+                </span>
+              ) : tab.badge ? (
                 <span
                   className={`text-[8px] px-1.5 py-0.2 rounded-full uppercase font-bold tracking-wider ${
                     isActive
@@ -274,7 +293,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {tab.badge}
                 </span>
-              )}
+              ) : null}
             </button>
           );
         })}

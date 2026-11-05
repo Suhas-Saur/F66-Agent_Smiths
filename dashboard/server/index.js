@@ -141,7 +141,8 @@ app.post('/api/customer-queries', (req, res) => {
       decision: evalResult.decision || 'escalate',
       assigned_part_id: evalResult.assigned_part_id || null,
       decision_reason: evalResult.decision_reason || '',
-      status: evalResult.decision === 'dispatch' ? 'pending_approval' : 'escalated',
+      status: 'pending_approval',
+      isNewAlert: true,
       adminNotes: null,
     };
 
