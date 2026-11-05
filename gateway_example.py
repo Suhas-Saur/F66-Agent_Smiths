@@ -61,4 +61,6 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     for key in ('TEAM_PROVIDER_URL','TEAM_PROVIDER_KEY','TEAM_MODEL','TEAM_GATEWAY_TOKEN'):
         if not os.environ.get(key): raise SystemExit('Configure team provider and gateway environment')
-    HTTPServer(('127.0.0.1',8080),Handler).serve_forever()
+    port = int(os.environ.get('PORT', 8080))
+    host = os.environ.get('HOST', '0.0.0.0')
+    HTTPServer((host, port), Handler).serve_forever()
