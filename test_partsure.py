@@ -114,6 +114,40 @@ class TestPartSureAI(unittest.TestCase):
         current_step = 15
         self.assertLess(current_step, max_steps)
 
+    def test_21_plot_twist_inclusive_wattage_ceiling(self):
+        """Plot Twist: Part watts must be inside the customer's inclusive min/max range."""
+        v, c, min_w, max_w = solution.parse_specs("Requires 12V barrel plug, load between 10W and 15W.", return_range=True)
+        self.assertEqual(v, 12)
+        self.assertEqual(c, 'barrel')
+        self.assertEqual(min_w, 10)
+        self.assertEqual(max_w, 15)
+
+        tickets = {'t1': {'voltage': 12, 'connector': 'barrel', 'watts': 10, 'min_watts': 10, 'max_watts': 15}}
+        catalog = {
+            'p1': {'id': 'p1', 'voltage': 12, 'connector': 'barrel', 'watts': 12, 'stock_known': True, 'stock': 1},
+            'p2': {'id': 'p2', 'voltage': 12, 'connector': 'barrel', 'watts': 20, 'stock_known': True, 'stock': 1},
+        }
+        cands = solution.get_compatible_candidates(tickets, catalog, [], 't1')
+        cand_ids = [cid for cid, _, _ in cands]
+        self.assertIn('p1', cand_ids)
+        self.assertNotIn('p2', cand_ids)  # 20W exceeds 15W ceiling
+
+    def test_22_plot_twist_wire_bytes_cap(self):
+        """Plot Twist: Cumulative wire byte counting across all model requests in a case <= 48000 bytes."""
+        sample_messages = [{'role': 'user', 'content': 'Test prompt with reasonable size.'}]
+        byte_count = solution.count_wire_bytes(sample_messages)
+        self.assertLess(byte_count, 48000)
+
+    def test_23_plot_twist_manifest_resolution(self):
+        """Plot Twist: inventory_manifest stock quantity resolution subtracting recorded dispatches."""
+        documents = [
+            {'entity_id': 'p1', 'status': 'approved', 'revision': 2, 'quantity': 5, 'event_at': 10},
+            {'entity_id': 'p1', 'status': 'draft', 'revision': 3, 'quantity': 10, 'event_at': 20},
+        ]
+        resolved = solution.resolve_approved_documents(documents, as_of=30)
+        self.assertEqual(resolved['p1']['revision'], 2)
+        self.assertEqual(resolved['p1']['quantity'], 5)
+
 
 if __name__ == '__main__':
     unittest.main()

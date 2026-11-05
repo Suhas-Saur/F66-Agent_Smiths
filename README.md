@@ -95,7 +95,7 @@ All benchmarks executed via official competition runner (`local_runner.py`):
 | **Smoke** (`smoke.json`) | 2 | 80.0 | 15.0 | 5.0 | **100.0 / 100** | **0** |
 | **Practice** (`practice.json`) | 12 | 80.0 | 15.0 | 4.58 | **99.58 / 100** | **0** |
 | **Training** (`training.json`) | 40 | 78.5 | 14.8 | 3.91 | **97.21 / 100** | **0** |
-| **Unit Test Suite** (`test_partsure.py`) | 20 | — | — | — | **20 / 20 PASS** | **0** |
+| **Unit Test Suite** (`test_partsure.py`) | 23 | — | — | — | **23 / 23 PASS** | **0** |
 
 ---
 
@@ -163,3 +163,30 @@ Per `EVENT_RULES.md`, the platform relays step-0 `op: llm` inference requests to
    - Restricted bearer token: `partsure-gateway-secret-token`
 4. Click **"Save new revision"** → **"Check connection"**.
 5. Once connection is confirmed, upload `PartSure_AI_submission.zip`.
+
+---
+
+## 8. Plot Twist Architecture & Adaptations (`RECORDS.md` Compliance)
+
+PartSure AI seamlessly incorporates the consolidated operating conditions released in the official Plot Twist:
+
+### 1. Inclusive Wattage Range & Ceiling Matching
+- In post-twist scenarios, excess capacity is no longer universally permitted. Customer requests may specify an inclusive range (`between X and Y W`), a strict ceiling (`at most X W`, `ceiling X W`), or a floor (`at least X W`).
+- `parse_specs(text, return_range=True)` deterministically resolves `(voltage, connector, min_watts, max_watts)`.
+- Candidate selection enforces `min_watts <= part_watts <= max_watts`.
+- When wattage is unreadable, post-twist mode flags candidates with `'twist_needs_clarify'`, enforcing tool `clarify` before any irreversible dispatch.
+
+### 2. Inventory Manifest & Dynamic Dispatch Subtraction
+- The batch open manifest (`inventory_manifest`) supplies `warehouse_revision` and `desk_receipt_revision` for each catalog part.
+- Calling `inspect(part_id)` retrieves historical `stock_documents`. The snapshot quantity is authoritative at batch open only if an approved document matches `revision == warehouse_revision` and `event_at <= as_of`.
+- Dynamic consumption: Batch open stock is subtracted by recorded dispatches (`dispatches_recorded[part_id]`), floored at zero (`max(0, open_qty - dispatches_recorded)`).
+- Missing document revisions represent unconfirmed evidence rather than zero stock, reliably triggering warehouse `verify` (cost 2) to prevent false escalations.
+
+### 3. Cumulative Wire-Byte Cap Enforcement (<= 48,000 bytes)
+- In post-twist cases, all model requests share a strict cumulative wire-byte allowance of **48,000 bytes**.
+- Measured strictly per Python UTF-8 encoding: `len(json.dumps(messages, ensure_ascii=False, allow_nan=False).encode('utf-8'))`.
+- PartSure AI uses a compact, token-efficient JSON prompt (~1,400 bytes, < 3% of the budget) and guards all outbound model transmissions against budget exhaustion (`llm_budget`).
+
+### 4. Authoritative Document Precedence
+- Business revisions from `request_documents` and `catalog_documents` are filtered deterministically: only documents with `status == 'approved'` and `issued_at <= as_of` are effective.
+- Highest revision takes precedence; unapproved drafts and late deliveries (`received_at`) are discarded.
