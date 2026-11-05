@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+*/node_modules/
+*/*/node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment and logs
+.env
+.env.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
