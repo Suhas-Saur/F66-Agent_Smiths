@@ -1,3 +1,23 @@
+export interface LiveCustomerQuery {
+  id: string;
+  customerName: string;
+  customerTitle: string;
+  avatar: string;
+  timestamp: string;
+  text: string;
+  extracted: {
+    voltage: number | null;
+    connector: string | null;
+    watts: number | null;
+    safe_20w_applied: boolean;
+  };
+  decision: 'dispatch' | 'escalate';
+  assigned_part_id?: string | null;
+  decision_reason?: string | null;
+  status: 'pending_approval' | 'approved' | 'dispatched' | 'escalated';
+  adminNotes?: string | null;
+}
+
 export interface Ticket {
   id: string;
   text: string;
@@ -9,6 +29,9 @@ export interface Ticket {
   decision?: 'dispatch' | 'escalate' | null;
   decision_reason?: string | null;
   assigned_part_id?: string | null;
+  assigned_part_watts?: number | null;
+  assigned_part_voltage?: number | null;
+  assigned_part_connector?: string | null;
 }
 
 export interface CatalogPart {
@@ -21,6 +44,9 @@ export interface CatalogPart {
   stock_known: boolean;
   stock: number | null;
   source?: 'desk_snapshot' | 'warehouse' | null;
+  desk_cache?: number | null;
+  warehouse_stock?: number | null;
+  has_discrepancy?: boolean;
 }
 
 export interface CandidateCheck {
@@ -106,11 +132,64 @@ export interface CaseMetaItem {
   parts_count: number;
 }
 
+export type UserRole = 'admin' | 'customer';
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  title: string;
+  badge: string;
+}
+
 export type TabType =
+  | 'home'
+  | 'customer'
   | 'workbench'
+  | 'charts'
+  | 'database'
   | 'overview'
   | 'player'
   | 'matrix'
   | 'catalog'
   | 'sandbox'
   | 'audit';
+
+export interface DatabaseStats {
+  totalWorlds: number;
+  totalTickets: number;
+  totalParts: number;
+  totalDiscrepancies: number;
+  discrepanciesPerWorld: number;
+  breakdownByDataset: {
+    practice: { worlds: number; tickets: number; parts: number };
+    smoke: { worlds: number; tickets: number; parts: number };
+    training: { worlds: number; tickets: number; parts: number };
+  };
+  voltages: { name: string; count: number; percent: number; color: string }[];
+  connectors: { name: string; count: number; percent: number; color: string }[];
+  wattages: { name: string; count: number; percent: number; color: string }[];
+  missingWattageStats: {
+    missing: number;
+    total: number;
+    percent: number;
+    safe20wApplied: number;
+  };
+  stockUnitsHistogram: { units: string; worlds: number }[];
+  unfulfillableDistribution: { category: string; worlds: number; color: string; desc: string }[];
+  snapshotAges: {
+    recent: number;
+    aged: number;
+    discrepanciesPerWorld: number;
+  };
+  baselineComparison: {
+    baselineMockPracticeScore: number;
+    baselineMockTrainingScore: number;
+    baselineUnnecessaryEscalations: number;
+    partSureScore: number;
+    partSureAvgSpend: number;
+    partSureUnnecessaryEscalations: number;
+    safetyRating: number;
+  };
+}

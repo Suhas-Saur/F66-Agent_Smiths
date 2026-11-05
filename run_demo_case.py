@@ -85,6 +85,29 @@ def run_case_trace(dataset_path='practice.json', case_index=0):
     cat_items = ctrl_state.get('catalog', {})
     tickets_items = ctrl_state.get('tickets', {})
 
+    # Enrich tickets with assigned part specifications
+    for tid, t in tickets_items.items():
+        assigned_p = cat_items.get(t.get('assigned_part_id'))
+        if assigned_p:
+            t['assigned_part_watts'] = assigned_p.get('watts')
+            t['assigned_part_voltage'] = assigned_p.get('voltage')
+            t['assigned_part_connector'] = assigned_p.get('connector')
+        else:
+            t['assigned_part_watts'] = None
+            t['assigned_part_voltage'] = None
+            t['assigned_part_connector'] = None
+
+    # Enrich catalog items with desk cache, warehouse stock, and discrepancy status
+    catalog_list = []
+    for pid, p in cat_items.items():
+        p_obj = dict(p)
+        desk_val = case_world.get('cache', {}).get(pid)
+        wh_val = case_world.get('stock', {}).get(pid)
+        p_obj['desk_cache'] = desk_val
+        p_obj['warehouse_stock'] = wh_val
+        p_obj['has_discrepancy'] = bool(desk_val is not None and wh_val is not None and desk_val != wh_val)
+        catalog_list.append(p_obj)
+
     compatibility_matrix = []
     for tid, t in tickets_items.items():
         row = {
@@ -131,7 +154,7 @@ def run_case_trace(dataset_path='practice.json', case_index=0):
         'condition': case_world.get('condition', 'ordinary'),
         'policy': record['observation'].get('policy', ''),
         'tickets': list(tickets_items.values()),
-        'catalog': list(cat_items.values()),
+        'catalog': catalog_list,
         'compatibility_matrix': compatibility_matrix,
         'steps': trace_steps,
         'spent': state['spent'],

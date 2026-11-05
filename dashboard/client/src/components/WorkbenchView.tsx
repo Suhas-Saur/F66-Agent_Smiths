@@ -8,13 +8,22 @@ import {
   Info,
   Wrench,
 } from 'lucide-react';
-import { CaseRunData } from '../types';
+import { CaseRunData, LiveCustomerQuery } from '../types';
+import { LiveCustomerQueriesFeed } from './LiveCustomerQueriesFeed';
 
 interface WorkbenchViewProps {
   runData: CaseRunData | null;
+  liveQueries?: LiveCustomerQuery[];
+  onAction?: (id: string, action: 'approve' | 'dispatch' | 'escalate', adminNotes?: string) => Promise<void>;
+  onSimulateInbound?: () => void;
 }
 
-export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ runData }) => {
+export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
+  runData,
+  liveQueries = [],
+  onAction,
+  onSimulateInbound,
+}) => {
   const tickets = runData?.tickets || [];
   const [selectedId, setSelectedId] = useState<string>(tickets[0]?.id || '');
   const [candidateFilter, setCandidateFilter] = useState<'all' | 'compatible' | 'rejected'>('all');
@@ -46,6 +55,16 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ runData }) => {
 
   return (
     <div className="space-y-6">
+      {/* Real-Time Live Customer Inbound Stream for Admin Dispatcher */}
+      {onAction && onSimulateInbound && (
+        <LiveCustomerQueriesFeed
+          queries={liveQueries}
+          onAction={onAction}
+          onSimulateInbound={onSimulateInbound}
+          isAdmin={true}
+        />
+      )}
+
       {/* 1. TICKET SELECTOR STRIP (CAROUSEL) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-slate-400 px-1">
