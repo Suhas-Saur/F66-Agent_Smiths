@@ -20,10 +20,10 @@ def evaluate_custom_request(dataset_path='practice.json', case_index=0, custom_t
     catalog = ctrl_state['catalog']
 
     # Parse specs
-    parsed_v, parsed_c, parsed_w = solution.parse_specs(custom_text) if custom_text else (None, None, None)
+    parsed_v, parsed_c, min_w, max_w = solution.parse_specs(custom_text, return_range=True) if custom_text else (None, None, None, None)
     v = override_v if override_v is not None else parsed_v
     c = override_c if override_c is not None else parsed_c
-    w = override_w if override_w is not None else parsed_w
+    w = override_w if override_w is not None else min_w
 
     # Evaluate against catalog
     candidates = []
@@ -36,6 +36,10 @@ def evaluate_custom_request(dataset_path='practice.json', case_index=0, custom_t
             w_match = p['watts'] >= w
         else:
             w_match = p['watts'] >= 20  # Safe 20W policy
+        
+        # Upper ceiling enforcement if specified (RECORDS.md Plot Twist)
+        if max_w is not None and p['watts'] > max_w:
+            w_match = False
 
         is_compat = v_match and c_match and w_match
 
